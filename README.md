@@ -1,3 +1,8 @@
+
+## OG-Core (Germany Calibration)
+Fork of PSLmodels/OG-Core with parameter modifications and data for Germany (OG-DE).
+
+
 # OG-Core
 
 | | |
@@ -20,6 +25,7 @@ OG-Core is an overlapping-generations (OG) model core theory, logic, and solutio
 ## Disclaimer
 
 The model is constantly under development, and model components could change significantly. The package will have released versions, which will be checked against existing code prior to release. Stay tuned for an upcoming release!
+
 
 
 ## Using/contributing to OG-Core
