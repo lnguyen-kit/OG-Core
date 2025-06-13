@@ -17,7 +17,12 @@ from ogcore import parameter_plots as pp
 
 START_YEAR = 2024
 END_YEAR = 2024
-UN_COUNTRY_CODE = "840"  # UN code for USA
+
+-------------------------------------------------------------------------------------------
+# Change: UN_COUNTRY_CODE for Germany 
+------------------------------------------------------------------------------------------
+UN_COUNTRY_CODE = "276"  # UN code for Germany 
+
 # create output director for figures
 CUR_PATH = os.path.split(os.path.abspath(__file__))[0]
 OUTPUT_DIR = os.path.join(CUR_PATH, "..", "data", "OUTPUT", "Demographics")
