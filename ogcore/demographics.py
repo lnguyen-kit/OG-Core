@@ -36,7 +36,7 @@ Define functions
 ------------------------------------------------------------------------
 """
 
-
+# zentrales Importinterface für Demografie-Rohdaten
 def get_un_data(
     variable_code,
     country_id=UN_COUNTRY_CODE,
@@ -88,9 +88,16 @@ def get_un_data(
     payload = {}
     headers = {"Authorization": "Bearer " + UN_TOKEN}
     response = get_legacy_session().get(target, headers=headers, data=payload)
+   
+    
     # Check if the request was successful before processing
+    # Ergebnis der Zugangsbefugnis in From eines Codes, um auf UNI Population Data Portal zuzugreifen
+    
     if response.status_code == 200:
         csvStringIO = StringIO(response.text)
+
+    # Textstrem lesen und filtern
+        
         df = pd.read_csv(csvStringIO, sep="|", header=1)
 
         # keep just what is needed from data
@@ -101,6 +108,8 @@ def get_un_data(
             axis=1,
             inplace=True,
         )
+
+        # entfernt ALtergruppen 100+
         df.loc[df.age == "100+", "age"] = 100
         df.age = df.age.astype(int)
         df.year = df.year.astype(int)
