@@ -556,6 +556,8 @@ def get_pop(
 
     return pop_2D, pre_pop
 
+# Funktion von der pop_rebin() ist eine bestehende Alterverteilung auf eine neue Struktur mit weniger Perioden umzuformen um es für das Modell passend zu machen 
+# also Rebnning = Gruppierung oder Umverteilung von Daten in neue Binds (Alterklassen)
 
 def pop_rebin(curr_pop_dist, totpers_new):
     """
@@ -578,25 +580,32 @@ def pop_rebin(curr_pop_dist, totpers_new):
     assert totpers_new >= 3
 
     # Number of periods in original data
+    # keine Umrechnung der Daten, also unverändert lassen
     totpers_orig = len(curr_pop_dist)
     if int(totpers_new) == totpers_orig:
         curr_pop_new = curr_pop_dist
+    # falls die Bedinungn gilt: dann Rebinning starten 
     elif int(totpers_new) < totpers_orig:
         num_sub_bins = float(10000)
         curr_pop_sub = np.repeat(
             np.float64(curr_pop_dist) / num_sub_bins, num_sub_bins
         )
+        # neue Länge der Zile Bins (Alterklassen) und neues Array initilaisieren 
         len_subbins = (np.float64(totpers_orig * num_sub_bins)) / totpers_new
         curr_pop_new = np.zeros(totpers_new, dtype=np.float64)
         end_sub_bin = 0
+
+        # schleife bei der die kleinnen SUb Bins auf neune Bins verteilt werden 
         for i in range(totpers_new):
             beg_sub_bin = int(end_sub_bin)
             end_sub_bin = int(np.rint((i + 1) * len_subbins))
             curr_pop_new[i] = curr_pop_sub[beg_sub_bin:end_sub_bin].sum()
         # Return curr_pop_new to single precision float (float32)
         # datatype
+        # Array mit neuner Polutaionsvertielung mit passendne Modellperioden 
         curr_pop_new = np.float32(curr_pop_new)
-
+        
+    # neue Bevölkerungs vertielung für OG-Core
     return curr_pop_new
 
 
