@@ -704,21 +704,28 @@ def get_imm_rates(
 
     
     for y in range(start_year, end_year + 1):
+        # pop_t :  Bevölkerung im Jahr y und pop_tp1: Bevölkerung im Jahr y+1 zum Vergleich aufeinanderfolgende Jahre 
         pop_t = pop_dist[y - start_year, :]
         pop_tp1 = pop_dist[y + 1 - start_year, :]
-        # initialize imm_rate vector
+        
+        # initialize imm_rate vector, leeres Array um später mit Immigartionsraten pro Altergruppe zu befüllen
         imm_rates = np.zeros(totpers)
-        # back out imm rates by age for each year
+        # back out imm rates by age for each year, erwartete Geburtenanzahl aus Anzahl Neugeborener = Summe der Fertilitätsraten × Bevölkerung
+        # np.dot berechent das Produkt von zwei arrays
         newborns = np.dot(fert_rates[y - start_year, :], pop_t)
         # new born imm_rate
+        # Berechnung der Immigrationsrate bei Neugeborennen (alter 0)
+        # (1 - infmort_rate) * newborns → Überlebende Babys, pop_tp1[0] → beobachtete Babys im Folgejahr, Differenz = Immigration von Babys, Ergebnis geteilt durch pop_t[0] → Normalisierung (Rate)
         imm_rates[0] = (
             pop_tp1[0] - (1 - infmort_rates[y - start_year]) * newborns
         ) / pop_t[0]
         # all other age imm_rates
+        # immingationsreaten für alle altäeren ALtergruppen berechnen 
         imm_rates[1:] = (
             pop_tp1[1:] - (1 - mort_rates[y - start_year, :-1]) * pop_t[:-1]
         ) / pop_t[1:]
 
+        #Berechnung der Immigrationsraten in 2D-Matrix 
         imm_rates_2D[y - start_year, :] = imm_rates
 
     if download_path:
@@ -775,15 +782,32 @@ def immsolve(imm_rates, *args):
 
     """
     fert_rates, mort_rates, infmort_rates, omega_cur_lev, g_n_SS = args
+
+    # Umrechnung der akutellen Alterstruktur in realtiven Antiele (summe =1)
     omega_cur_pct = omega_cur_lev / omega_cur_lev.sum()
+    # Transitionsmatrix OMEGA mit totpersxtotpers erzeugen die beschriebt wer überlegt, wer geboren wird, wer immingriert 
     totpers = len(fert_rates)
     OMEGA = np.zeros((totpers, totpers))
+
+    # Geburten und Immingration von babys (in der ersten Zeile)
+    # (1 - infmort) * fert_rates → überlebende Babys durch Geburten, imm_rates[0] → Immigration von Babys, ergibt gesamte Neugeborenen-Zahl
     OMEGA[0, :] = (1 - infmort_rates) * fert_rates + np.hstack(
         (imm_rates[0], np.zeros(totpers - 1))
     )
+    # Übrelben und Immigration ab Alter 1 , Überlebende aus vorheringen Altergruppen werden so bestimmt, z. B. Menschen im Alter 30, die 31 werden → Überleben = 1 - mort_rate
     OMEGA[1:, :-1] += np.diag(1 - mort_rates[:-1])
     OMEGA[1:, 1:] += np.diag(imm_rates[1:])
+    
+    # Übergangsmatrix/ Transitionsmatrix Omega sagt aus wie sich die Alterverteilung der BEvölkerung von einem Jahr zum naächsten Jahr sich verändert 
+    # Ziel ist es einen stationärens GG zu errecihen, dazu soll folgendes gelten Verteilungnew = (1+gn) Verteilungakutell
+    # für die Berehcnung des langfristigen GLeichgewichts soll die Transitionsmatrix helfen, realtische Altersverteilungen abzubilden und stabile Demografie für das Modell zu erzeugen 
+    # demografisches Gleichgewicht: Die Bevölkerungsverteilung nach Alter ändert sich über die Zeit nicht mehr, also bleibt gleich – außer durch einen konstanten Wachstumsfaktor
+    # Anwednung der OMEGA_Matrix auf akutelle ALterstruktur, Multipliziert Altersstruktur mit Übergangsmatrix → ergibt nächste Periode, Division durch Wachstumsrate 1 + g_n → da Bevölkerung insgesamt wächst
     omega_new = np.dot(OMEGA, omega_cur_pct) / (1 + g_n_SS)
+    
+    # omega_new: Was passiert nach Anwendung der Transitionsmatrix (also: Überleben, Geburt, Immigration), omega_cur_pct: Der aktuelle Anteil in jedem Alter (Summe = 1)
+    # wenn Diffrenz nulll ist der steady state erreicht , weil Das, was durch Geburten, Sterblichkeit und Immigration entsteht, reproduziert exakt die aktuelle Altersstruktur
+
     omega_errs = omega_new - omega_cur_pct
 
     return omega_errs
