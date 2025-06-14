@@ -306,10 +306,12 @@ def get_mort(
     ) # UN Sterberaten  , 80 is Age specific mortaliby rate 
     
     # CLean and rebin data
+    # y ist das Jahr worüber man geren iteriert un die Daten betrachtet, , verwednung z.B. df_2021 
     for y in range(start_year, end_year + 1):
         df_y = df[(df.age >= min_age) & (df.age <= max_age) & (df.year == y)]
         # put in vector
-        mort_rates_data = df_y.value.values
+        # Ziehe aus den UN-Sterbedaten (df) für das Jahr y und die Altersgruppe von min_age bis max_age die Sterberaten-Werte als Array heraus
+        mort_rates_data = df_y.value.values # NumPY array ohne DataFrame-Struktur 
         # In UN data, mortality rates for 0 year olds are the infant
         # mortality rates
 
@@ -318,10 +320,17 @@ def get_mort(
         # Rebin data in the case that model period not equal to one calendar
         # year
         # make mort rates those from age 1-100 and set to 1 for age 100
+        # [1:]: Nimmt die Sterberaten ab Alter 1 (also Altersjahr 1–99) 
+        # np.append(..., 1.0): nimmt alee Werte ab alter 1 und dann hängt am Ende die Rate 1.0 an also am Ende ist die Sterbe rate bei 100 Prozent 
         mort_rates_data = np.append(mort_rates_data[1:], 1.0)
+
+        # SIcherstellung anpassung der Alterstrutkur an das Modell, aslo Altserstrur an die Modellperioden anpassen 
         mort_rates = pop_rebin(mort_rates_data, totpers)
         # put in 2D array
+        # speichert die Ergebnisse/Werte endgültig auf die anfangs erstellte 2D array für alle JAhre 
+        # Speichert das Ergebnis in ein 2D-Array für alle Jahre. Beispiel bei start_year = 2021, y = 2021: Zeile 0 wird gefüllt mit den berechneten Sterberaten für 2021
         mort_rates_2D[y - start_year, :] = mort_rates
+        # speichere die Säuglingsrate sepreat ab 
         infmort_rate_vec[y - start_year] = infmort_rate
 
     if download_path:
