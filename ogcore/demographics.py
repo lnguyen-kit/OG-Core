@@ -609,6 +609,14 @@ def pop_rebin(curr_pop_dist, totpers_new):
     return curr_pop_new
 
 
+# Immigration = tatsächliche Bevölkerung im nächsten Jahr – das, was durch Geburten und Überleben erklärbar ist
+# Das bedeutet:
+# Man weiß, wie viele Menschen im Jahr t leben (pop_t)
+# Man weiß, wie viele davon wahrscheinlich überleben (1 - Sterberate)
+# Man weiß, wie viele Geburten stattfinden
+# Man sieht, wie viele Menschen im Folgejahr da sind (pop_t+1) 
+# Der Unterschied (das Residuum) wird dann als Zuwanderung interpretiert.
+    
 def get_imm_rates(
     totpers=100,
     min_age=0,
@@ -654,7 +662,9 @@ def get_imm_rates(
             each year of data and period of life, length E+S
 
     """
+    # leere Matrix für Immingariontraten initialisieren --> Matrix Jahre x Alter 
     imm_rates_2D = np.zeros((end_year + 1 - start_year, totpers))
+    
     if fert_rates is None:
         # get fert rates from UN data from initial year to data year
         fert_rates = get_fert(
@@ -691,6 +701,8 @@ def get_imm_rates(
     # Make sure shape conforms
     assert pop_dist.shape[1] == mort_rates.shape[1]
     assert pop_dist.shape[0] == end_year - start_year + 2
+
+    
     for y in range(start_year, end_year + 1):
         pop_t = pop_dist[y - start_year, :]
         pop_tp1 = pop_dist[y + 1 - start_year, :]
