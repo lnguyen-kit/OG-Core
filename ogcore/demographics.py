@@ -157,17 +157,18 @@ def get_un_data(
 
     return df
 
-
+# Funktion zur erzeugung der alterabhängigen Fertilitätsraten , dabei werden Rohdaten aud UN-API in ein modellkompatibles Format konvertiert
+# totpers = Gesamtzahl der Modellperioden im Leben E+S =100
 def get_fert(
     totpers=100,
     min_age=0,
     max_age=99,
     country_id=UN_COUNTRY_CODE,
-    start_year=START_YEAR,
-    end_year=END_YEAR,
-    graph=False,
-    plot_path=None,
-    download_path=None,
+    start_year=START_YEAR, #akutell auf 2024 gesetzt 
+    end_year=END_YEAR, #akutell auf 2024
+    graph=False, # plotten auf nein gesetzt 
+    plot_path=None, # plot wird nicht gespeichert
+    download_path=None, # fert_rate_2D wird als CSV gespeichert
 ):
     """
     This function generates a vector of fertility rates by model period
@@ -191,19 +192,23 @@ def get_fert(
         fig (Matplotlib Figure): figure object if graph=True and plot_path=None
 
     """
-    # initialize fert rates array
-    fert_rates_2D = np.zeros((end_year + 1 - start_year, totpers))
+    # initialize fert rates array 
+    fert_rates_2D = np.zeros((end_year + 1 - start_year, totpers)) # leeres Array inialisieren,  Matrixgröße (Jahre, Alterperioden)
     # Read UN data
-    df = get_un_data(
-        "68", country_id=country_id, start_year=start_year, end_year=end_year
-    )
+    df = get_un_data("68", country_id=country_id, start_year=start_year, end_year=end_year) # Lade UN_FERtility_daten,  indikator 68 ist Fertilitäsraten nach Alter der Mutter 
+
+    
     # CLean and rebin data
-    for y in range(start_year, end_year + 1):
+    # jedes Jahr seperat behandeln 
+    for y in range(start_year, end_year + 1): 
+        #  Filtere nur gütlige Altersgruppen
         df_y = df[(df.age >= min_age) & (df.age <= max_age) & (df.year == y)]
-        # put in vector
+        # put in vector, also Fertilitäsraten extrahieren
         fert_rates = df_y.value.values
         # fill in with zeros for ages  < 15 and > 49
         # NOTE: this assumes min_year < 15 and max_age > 49
+
+        # 0_raten für Alterbereich außerhalb von 15-49
         fert_rates = np.append(fert_rates, np.zeros(max_age - 49))
         fert_rates = np.append(np.zeros(15 - min_age), fert_rates)
         # divide by 1000 because fertility rates are number of births per
@@ -212,9 +217,12 @@ def get_fert(
         fert_rates = fert_rates / 2000
         # Rebin data in the case that model period not equal to one calendar
         # year
+        # REbin auf Modellstruktur -- >hier 100 Alterpserionden --> einen 100er Vekrot machen 
         fert_rates = pop_rebin(fert_rates, totpers)
+        # Speichere in Zeile (= Jahr) und Splaten/Einträge sind 100 und Einträge SInd Fertilitäsraten (pro MOdellalter)
         fert_rates_2D[y - start_year, :] = fert_rates
-
+        
+    # specihern als CSV falls oben auf true gesetzt 
     if download_path:
         np.savetxt(
             os.path.join(download_path, "fert_rates.csv"),
@@ -245,6 +253,15 @@ def get_fert(
             return fert_rates_2D, fig
     else:
         return fert_rates_2D
+
+# ------------------------------------------------------------------
+# Feritlitäsraten = wie vieleKinder pro Frau eines bestimmten Jahres im Jahr werden geboren 
+# Basis für Bevölkerungswachstum, Alterstruktur, Steueraufkommenusw. --> aber primär für demografischen Nachwuchs
+
+
+# ---------------------------------------------------------------
+
+
 
 
 def get_mort(
@@ -281,12 +298,13 @@ def get_mort(
         fig (Matplotlib Figure): figure object if graph=True and plot_path=None
 
     """
-    mort_rates_2D = np.zeros((end_year + 1 - start_year, totpers))
-    infmort_rate_vec = np.zeros(end_year + 1 - start_year)
+    mort_rates_2D = np.zeros((end_year + 1 - start_year, totpers)) # Sterebetraten für Alterjahr 1 bis 100
+    infmort_rate_vec = np.zeros(end_year + 1 - start_year) # Sterberate für Neugebrenre (Säuglingssterberate)
     # Read UN data
     df = get_un_data(
-        "80", country_id=country_id, start_year=start_year, end_year=end_year
-    )
+        "80", country_id=country_id, start_year=start_year, end_year=end_year 
+    ) # UN Sterberaten  , 80 is Age specific mortaliby rate 
+    
     # CLean and rebin data
     for y in range(start_year, end_year + 1):
         df_y = df[(df.age >= min_age) & (df.age <= max_age) & (df.year == y)]
