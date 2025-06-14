@@ -369,7 +369,8 @@ def get_mort(
     else:
         return mort_rates_2D, infmort_rate_vec
 
-
+# wirtschaftlich aktiv ab E+1 , E bedeutet nich wirtschaftlich aktiv, und S sind die Perioden wo wirtschaftlich aktiv 
+# entscheidend bei infer_pop = False:  die Bevölkerung wird direkt aus UN-Daten gelesen (meist Standardweg)
 def get_pop(
     E=20,
     S=80,
@@ -398,8 +399,12 @@ def get_pop(
         min_age (int): age in years at which agents are born, >= 0
         max_age (int): age in years at which agents die with certainty,
             >= 4, < 100 (max age in UN data is 99, 100+ i same group)
+
+        Soll Bevölkerung aus fert/mort/imm gerechnet werden (True) oder aus UN-Daten gelesen (False)
         infer_pop (bool): =True if want to infer the population
             from the given fertility, mortality, and immigration rates
+
+        fert_rates, mort_rates, infmort_rates, imm_rates: Nur nötig, wenn infer_pop=True
         fert_rates (Numpy array): fertility rates for each year of data
             and model age
         mort_rates (Numpy array): mortality rates for each year of data
@@ -408,14 +413,20 @@ def get_pop(
             of data
         imm_rates (Numpy array): immigration rates for reach year of data
             and model age
+
+        initial_pop : Optionale Startverteilung der Bevölkerung
+        
         initial_pop_data (Pandas DataFrame): initial population data
             for the first year of model calibration (start_year)
+            
+        pre_pop_dist: Bevölkerung im Jahr vor dem Start (t-1)
         pre_pop_dist (Numpy array): population distribution for the year
             before the initial year for calibration
         country_id (str): country id for UN data
         start_year (int): start year data
         end_year (int): end year for data
-        download_path (str): path to save population distribution data
+        
+        download_path (str): path to save population distribution data, Speicherort für Output (CSV)
 
     Returns:
         pop_2D (Numpy array): population distribution over T0 periods
@@ -425,6 +436,10 @@ def get_pop(
     # Generate time path of the nonstationary population distribution
     # Get path up to end of data year
     pop_2D = np.zeros((end_year + 2 - start_year, E + S))
+   
+    # Fall infer_pop =true  ist nur interessant für Beölkerungsseznarien, Zukunft, politik testen 
+    # anwednungsbeispiele: Gegenwartsbasierte Szenarien mit Politik-Änderung, Langfristprognosen (steady state / TPI), Eigene Annahmen zu Migration oder Geburten
+    # oder/und  Keine vollständigen externen Daten (UN Daten) verfügbar
     if infer_pop:
         if pre_pop_dist is None:
             pre_pop_data = get_un_data(
@@ -483,6 +498,8 @@ def get_pop(
             )
     else:
         # Read UN data
+        # falls infer_pop =False , also wird Bevölkerung wird niciht simuliert , sondern aus UN_daten übernommen 
+        # UN Populationsdaten laden , dabei end_year + 2 wirdzusätzliche Jahre geberuacht, um später Immigration ableiten zu können
         pop_data = get_un_data(
             "47",
             country_id=country_id,
@@ -491,21 +508,27 @@ def get_pop(
             + 2,  # note go to + 2 because needed to infer immigration for end_year
         )
         # CLean and rebin data
+        # Daten filtern nach Alter und Jahr 
         for y in range(start_year, end_year + 2):
             pop_data_sample = pop_data[
                 (pop_data["age"] >= min_age)
                 & (pop_data["age"] <= max_age)
                 & (pop_data["year"] == y)
             ]
+            # Werte /Polulationszahlen pro Alter extrahieren 
+            # pop ist ein NumPy Array
             pop = pop_data_sample.value.values
             # Generate the current population distribution given that E+S might
             # be less than max_age-min_age+1
             # age_per_EpS = np.arange(1, E + S + 1)
             pop_EpS = pop_rebin(pop, E + S)
+            # Zeile (mit bestimmten Jahr) wird mit der Bevölkerung pro Modellatler gefülllt 
+            # Beispiel:pop_2D[0, :] enthält Altersstruktur von 2021, pop_2D[1, :] → 2022 usw.
             pop_2D[y - start_year, :] = pop_EpS
 
         # get population distribution one year before initial year for
         # calibration of omega_S_preTP
+        # hole Bevölkerung vom Jahr vor dem Start_year iese Bevölkerung im Jahr t-1 wird z. B. genutzt zur Initialisierung von Migration oder um Veränderungen besser zu verstehen
         pre_pop_data = get_un_data(
             "47",
             country_id=country_id,
