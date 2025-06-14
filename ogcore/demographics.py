@@ -204,7 +204,7 @@ def get_fert(
         #  Filtere nur gütlige Altersgruppen
         df_y = df[(df.age >= min_age) & (df.age <= max_age) & (df.year == y)]
         # put in vector, also Fertilitäsraten extrahieren
-        fert_rates = df_y.value.values
+        fert_rates = df_y.value.values 
         # fill in with zeros for ages  < 15 and > 49
         # NOTE: this assumes min_year < 15 and max_age > 49
 
@@ -312,6 +312,8 @@ def get_mort(
         mort_rates_data = df_y.value.values
         # In UN data, mortality rates for 0 year olds are the infant
         # mortality rates
+
+        # erste EIntrag age ==0 ist die Säuglingssterblichkeit 
         infmort_rate = mort_rates_data[0]
         # Rebin data in the case that model period not equal to one calendar
         # year
