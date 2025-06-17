@@ -18,9 +18,9 @@ from ogcore import parameter_plots as pp
 START_YEAR = 2024
 END_YEAR = 2024
 
--------------------------------------------------------------------------------------------
+
 # Change: UN_COUNTRY_CODE for Germany 
-------------------------------------------------------------------------------------------
+
 UN_COUNTRY_CODE = "276"  # UN code for Germany 
 
 # create output director for figures
