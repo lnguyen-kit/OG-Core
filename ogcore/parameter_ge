@@ -1,0 +1,40 @@
+from ogcore.parameters import Specifications
+
+def get_parameters():
+    """
+    Create and return a Specifications object with macroeconomic parameters
+    calibrated to Germany, based on publicly available data and standard assumptions.
+    This file uses the update_specifications to override
+    values from default_parameters.json.
+    """
+    
+    specs = Specifications()
+
+    # Germany macroeconomic calibration 
+    specs.update_specifications({
+        # Economic assumptions
+        "g_y_annual": 0.012,               # Long-run productivity growth (~1.2%)
+
+        # Capital share in production
+        "gamma": 0.33,                    # Capital share (Cobb-Douglas alpha)
+
+        # Government debt settings
+        "initial_debt_ratio": 0.75,       # Initial debt-to-GDP ratio
+        "debt_ratio_ss": 0.70,            # Steady-state target debt ratio
+
+        # Interest rate spread (gov vs private)
+        "r_gov_scale": 0.20,              # Responsiveness of r_gov to r_priv
+        "r_gov_shift": -0.010,            # Safe asset premium
+
+        # Government spending and transfers
+        "alpha_T": 0.17,                  # Transfers as share of GDP
+        "alpha_G": 0.18,                  # Non-transfer spending as share of GDP
+
+        # Openness (foreign exposure)
+        "initial_foreign_debt_ratio": 0.50,   # Share of gov debt held abroad
+        "zeta_D": 0.45,                       # Share of new gov debt bought by foreigners
+        "zeta_K": 0.60,                       # Foreign share of excess capital
+
+    })
+
+    return specs
